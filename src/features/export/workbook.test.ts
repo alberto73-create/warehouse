@@ -1,0 +1,3 @@
+import {describe,expect,it} from 'vitest';import * as XLSX from 'xlsx';
+import {demoBins,demoMovements,demoParts} from '@/data/demo';import {createWarehouseWorkbook} from './workbook';
+describe('export Excel',()=>{it('genera un xlsx leggibile con sei fogli',()=>{const book=createWarehouseWorkbook(demoParts,demoMovements,demoBins);expect(book.SheetNames).toEqual(['Articoli','Giacenze','Movimenti','Locazioni','Richieste','Configurazione']);const bytes=XLSX.write(book,{type:'buffer',bookType:'xlsx'});const parsed=XLSX.read(bytes,{type:'buffer'});expect(parsed.SheetNames).toHaveLength(6);expect(XLSX.utils.sheet_to_json(parsed.Sheets.Articoli)).not.toHaveLength(0)})});

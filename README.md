@@ -24,9 +24,9 @@ Aprire `http://localhost:3000`. La prima visita inizializza dati demo realistici
 
 1. Creare un progetto Google Cloud, abilitare **Google Sheets API** e creare un Service Account.
 2. Condividere il foglio con l'e-mail del Service Account come editor.
-3. Creare i tab `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`. `MOVIMENTI` deve rimanere append-only e avere `id` UUID come chiave idempotente.
-4. In Vercel configurare `DATA_ADAPTER=google`, `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `MANAGER_PIN`. Nella chiave privata codificare gli a-capo come `\n`.
-5. Sostituire l'implementazione mock di `src/app/api/sync/route.ts` con un adapter server-only che: indicizza gli UUID già acquisiti, accoda soltanto i nuovi movimenti, aggiorna snapshot e `SYNC_META`, quindi restituisce modifiche successive al cursore client. Non importare mai credenziali in componenti client.
+3. Creare i tab `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`. `MOVIMENTI` deve rimanere append-only e avere `id` UUID come chiave idempotente. La riga 1 di `MOVIMENTI` deve contenere: `id`, `createdAt`, `code`, `quantity`, `from`, `to`, `operator`, `note`, `kind`, `delta`.
+4. In Vercel configurare `DATA_ADAPTER=google`, `GOOGLE_SHEET_ID`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `MANAGER_PIN`. Nella chiave privata codificare gli a-capo come `\n`.
+5. L’adapter server-only selezionato da `DATA_ADAPTER` autentica il Service Account, deduplica gli UUID, accoda i nuovi movimenti e restituisce quelli successivi al cursore client. Non importare mai credenziali nei componenti client.
 
 ## Deploy Vercel
 
@@ -63,3 +63,14 @@ La route `/` è presente in `src/app/page.tsx`. Una pagina Vercel bianca con cod
 6. Se un dominio personalizzato o alias continua a dare 404, riassegnarlo al deployment corrente da **Settings → Domains**.
 
 Non impostare **Output Directory**: Next.js la gestisce automaticamente. Non configurare il progetto come “Other” o come sito statico, perché l'app contiene route API server-side.
+
+## Sincronizzazione V1 e Google Sheets
+
+Impostare `DATA_ADAPTER=google`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `GOOGLE_SHEET_ID` solo nell'ambiente server Vercel. L'adapter autentica il Service Account tramite JWT OAuth, legge `MOVIMENTI` e accoda soltanto UUID assenti. Il client mantiene un cursore in IndexedDB, invia i pending e applica i movimenti remoti non ancora conosciuti. Per inizializzare il foglio creare le schede `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`; `MOVIMENTI` usa le colonne `id, createdAt, code, quantity, from, to, operator, note, kind, delta` ed è append-only.
+
+La modalità `DATA_ADAPTER=mock` resta disponibile in sviluppo. Essendo memoria del processo serverless, non va usata come archivio di produzione.
+
+
+## Fase 2
+
+La [verifica della Fase 2](docs/FASE2.md) descrive implementazione e limiti; l’[audit finale in 35 punti](docs/AUDIT_FINALE_V1.md) non dichiara la V1 pronta finché build, Android/offline e Google staging non sono verificati.
