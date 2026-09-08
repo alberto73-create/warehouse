@@ -25,6 +25,7 @@ Aprire `http://localhost:3000`. La prima visita inizializza dati demo realistici
 1. Creare un progetto Google Cloud, abilitare **Google Sheets API** e creare un Service Account.
 2. Condividere il foglio con l'e-mail del Service Account come editor.
 3. Creare i tab `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`. `MOVIMENTI` deve rimanere append-only e avere `id` UUID come chiave idempotente. La riga 1 di `MOVIMENTI` deve contenere: `id`, `createdAt`, `code`, `quantity`, `from`, `to`, `operator`, `note`, `kind`, `delta`.
+   Per `ARTICOLI` e `SCOMPARTI` usare le colonne `id`, `updatedAt`, `updatedBy`, `json`: ogni modifica aggiunge una versione e il server seleziona deterministicamente la più recente.
 4. In Vercel configurare `DATA_ADAPTER=google`, `GOOGLE_SHEET_ID`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `MANAGER_PIN`. Nella chiave privata codificare gli a-capo come `\n`.
 5. L’adapter server-only selezionato da `DATA_ADAPTER` autentica il Service Account, deduplica gli UUID, accoda i nuovi movimenti e restituisce quelli successivi al cursore client. Non importare mai credenziali nei componenti client.
 
