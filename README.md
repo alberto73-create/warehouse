@@ -50,3 +50,16 @@ Questa revisione è un prototipo parziale e non implementa ancora tutti i requis
 La [prima fase di completamento core](docs/FASE_CORE.md) documenta il confronto prima/dopo per scanner QR, operatori, ruoli, richieste, arrivi, griglia, rettifiche, spedizioni, A001 e scorta minima.
 
 La griglia demo è attualmente 3×3 e deve ancora essere resa configurabile. Lo scanner nel prototipo porta al flusso ricerca; l'integrazione fotocamera potrà usare `BarcodeDetector` con fallback a una libreria QR. Il numero operatore demo è `MR`; nessun nome reale è incluso. L'export `.xlsx` genera per ora i fogli Articoli, Giacenze e Movimenti.
+
+## Risoluzione errore Vercel `404: NOT_FOUND`
+
+La route `/` è presente in `src/app/page.tsx`. Una pagina Vercel bianca con codice globale `NOT_FOUND` (anziché la pagina 404 di Next.js) indica normalmente che l'URL di deployment non esiste più, è stato sostituito oppure non è quello assegnato al deployment corrente.
+
+1. In Vercel aprire **Project → Settings → General** e impostare **Framework Preset: Next.js** e **Root Directory: `.`** (la cartella contenente `package.json`).
+2. In **Deployments**, aprire l'ultimo deployment riuscito e usare **Visit**; non riutilizzare un vecchio URL preview copiato prima di un redeploy.
+3. Verificare che la branch collegata contenga il commit più recente e avviare **Redeploy** senza usare la cache se il deployment precedente è incompleto.
+4. Controllare i log: devono essere eseguiti `npm install` e `npm run build`. Il file `vercel.json` nel repository fissa esplicitamente framework e comandi.
+5. Dopo il deploy verificare prima `/api/health`: deve rispondere con `{"status":"ok","application":"magazzino-tecnico"}`, poi aprire `/`.
+6. Se un dominio personalizzato o alias continua a dare 404, riassegnarlo al deployment corrente da **Settings → Domains**.
+
+Non impostare **Output Directory**: Next.js la gestisce automaticamente. Non configurare il progetto come “Other” o come sito statico, perché l'app contiene route API server-side.
