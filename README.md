@@ -20,14 +20,31 @@ Aprire `http://localhost:3000`. La prima visita inizializza dati demo realistici
 - **Sync**: l'UI salva prima snapshot e movimento nella stessa transazione locale. `POST /api/sync` accetta UUID e restituisce quelli acquisiti; l'adapter mock è già usabile senza credenziali.
 - **Dominio**: `Richiesto` è una quantità attesa, `In viaggio` uno stato logistico e le altre destinazioni sono fisiche. L'ingresso di una fornitura scala `Richiesto`; il passaggio successivo da `In viaggio` a una posizione fisica non lo scala di nuovo.
 
-## Google Sheets
+## Google Sheets — struttura definitiva
+
+Creare **esattamente sette tab**, con i nomi maiuscoli riportati sotto. La riga 1 contiene le intestazioni; i dati iniziano dalla riga 2.
+
+| Tab | Colonne, in ordine | Lettura/scrittura | Chiave e strategia |
+|---|---|---|---|
+| `ARTICOLI` | A `code`, B `updatedAt`, C `updatedBy`, D `json` | Catalogo, descrizione, soglia, note e snapshot giacenze | `(code, updatedAt, updatedBy)`; versionato append-only, ultimo LWW |
+| `LOCAZIONI` | A `id`, B `updatedAt`, C `updatedBy`, D `json` | Nome e tipo delle aree fisiche/logistiche | `(id, updatedAt, updatedBy)`; versionato append-only |
+| `SCOMPARTI` | A `id`, B `updatedAt`, C `updatedBy`, D `json` | Etichetta, posizione, span e abilitazione | `(id, updatedAt, updatedBy)`; versionato append-only |
+| `MOVIMENTI` | A `id`, B `createdAt`, C `code`, D `quantity`, E `from`, F `to`, G `operator`, H `note`, I `kind`, J `delta` | Registro eventi completo | `id` UUID; append-only e idempotente |
+| `RICHIESTE` | A `code`, B `updatedAt`, C `updatedBy`, D `json` | Quantità richiesta e in viaggio per codice | `(code, updatedAt, updatedBy)`; versionato append-only |
+| `CONFIGURAZIONE` | A `id`, B `updatedAt`, C `updatedBy`, D `json` | Configurazione generale del magazzino | `(id, updatedAt, updatedBy)`; versionato append-only |
+| `SYNC_META` | A `key`, B `value`, C `updatedAt`, D `deviceId` | Audit del cursore dopo ogni sync | append-only; `key=cursor` |
+
+Il campo `json` contiene l'intero record JSON ed è il payload letto dal bootstrap. `ARTICOLI.stock` contiene le giacenze correnti riconciliate; `MOVIMENTI` consente audit e ricostruzione; `RICHIESTE` rende espliciti `requested` e `travelling`. Le collisioni delle entità versionate sono risolte deterministicamente sulla coppia `(updatedAt, updatedBy)`.
+
+### Configurazione
 
 1. Creare un progetto Google Cloud, abilitare **Google Sheets API** e creare un Service Account.
-2. Condividere il foglio con l'e-mail del Service Account come editor.
-3. Creare i tab `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`. `MOVIMENTI` deve rimanere append-only e avere `id` UUID come chiave idempotente. La riga 1 di `MOVIMENTI` deve contenere: `id`, `createdAt`, `code`, `quantity`, `from`, `to`, `operator`, `note`, `kind`, `delta`.
-   Per `ARTICOLI` e `SCOMPARTI` usare le colonne `id`, `updatedAt`, `updatedBy`, `json`: ogni modifica aggiunge una versione e il server seleziona deterministicamente la più recente.
-4. In Vercel configurare `DATA_ADAPTER=google`, `GOOGLE_SHEET_ID`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `MANAGER_PIN`. Nella chiave privata codificare gli a-capo come `\n`.
-5. L’adapter server-only selezionato da `DATA_ADAPTER` autentica il Service Account, deduplica gli UUID, accoda i nuovi movimenti e restituisce quelli successivi al cursore client. Non importare mai credenziali nei componenti client.
+2. Condividere il foglio con `GOOGLE_CLIENT_EMAIL` come editor.
+3. Creare i sette tab e le intestazioni sopra, senza rinominarli.
+4. In Vercel impostare `DATA_ADAPTER=google`, `GOOGLE_SHEET_ID`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `MANAGER_PIN` e `MANAGER_TOKEN_SECRET`. Nella chiave privata rappresentare gli a-capo con `\n`.
+5. `MANAGER_TOKEN_SECRET` deve essere una stringa casuale lunga (almeno 32 caratteri) usata per firmare token Manager con scadenza di 8 ore. Non usare prefissi `NEXT_PUBLIC_`: l'adapter e le credenziali restano esclusivamente server-side.
+
+La modalità `DATA_ADAPTER=mock` serve solo allo sviluppo e non offre persistenza tra cold start serverless.
 
 ## Deploy Vercel
 
@@ -50,7 +67,6 @@ Questa revisione è un prototipo parziale e non implementa ancora tutti i requis
 
 La [prima fase di completamento core](docs/FASE_CORE.md) documenta il confronto prima/dopo per scanner QR, operatori, ruoli, richieste, arrivi, griglia, rettifiche, spedizioni, A001 e scorta minima.
 
-La griglia demo è attualmente 3×3 e deve ancora essere resa configurabile. Lo scanner nel prototipo porta al flusso ricerca; l'integrazione fotocamera potrà usare `BarcodeDetector` con fallback a una libreria QR. Il numero operatore demo è `MR`; nessun nome reale è incluso. L'export `.xlsx` genera per ora i fogli Articoli, Giacenze e Movimenti.
 
 ## Risoluzione errore Vercel `404: NOT_FOUND`
 
@@ -67,11 +83,8 @@ Non impostare **Output Directory**: Next.js la gestisce automaticamente. Non con
 
 ## Sincronizzazione V1 e Google Sheets
 
-Impostare `DATA_ADAPTER=google`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `GOOGLE_SHEET_ID` solo nell'ambiente server Vercel. L'adapter autentica il Service Account tramite JWT OAuth, legge `MOVIMENTI` e accoda soltanto UUID assenti. Il client mantiene un cursore in IndexedDB, invia i pending e applica i movimenti remoti non ancora conosciuti. Per inizializzare il foglio creare le schede `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`; `MOVIMENTI` usa le colonne `id, createdAt, code, quantity, from, to, operator, note, kind, delta` ed è append-only.
-
-La modalità `DATA_ADAPTER=mock` resta disponibile in sviluppo. Essendo memoria del processo serverless, non va usata come archivio di produzione.
-
+L’adapter legge e scrive tutti i sette tab descritti nella sezione **Google Sheets — struttura definitiva**. Il client mantiene il cursore in IndexedDB, invia operazioni pending e catalogo locale, quindi persiste atomicamente il bootstrap remoto. La specifica tabellare estesa è disponibile in [`docs/GOOGLE_SHEETS_SCHEMA.md`](docs/GOOGLE_SHEETS_SCHEMA.md).
 
 ## Fase 2
 
-La [verifica della Fase 2](docs/FASE2.md) descrive implementazione e limiti; l’[audit finale in 35 punti](docs/AUDIT_FINALE_V1.md) non dichiara la V1 pronta finché build, Android/offline e Google staging non sono verificati.
+La [verifica della Fase 2](docs/FASE_2.md) descrive implementazione e limiti; l’[audit finale in 35 punti](docs/AUDIT_FINALE_V1.md) non dichiara la V1 pronta finché build, Android/offline e Google staging non sono verificati.

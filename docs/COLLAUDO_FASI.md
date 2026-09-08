@@ -11,7 +11,7 @@ Sono stati verificati codice, transazioni, protocollo e test automatici. Il coll
 | QR valido/sconosciuto | 🟡 | Ricerca testata; fotocamera reale non collaudata |
 | Permesso negato/fallback/chiusura stream | 🟡 | Rami e cleanup implementati; test browser assente |
 | Operatore e riapertura | 🟡 | Sessione in tabella Dexie; test lifecycle browser assente |
-| Base/Manager | ⚠️ | UI nega controlli Manager al Base, ma manca autorizzazione server forte per modifiche catalogo |
+| Base/Manager | 🟡 | UI e API validano un token Manager firmato; manca collaudo end-to-end su Vercel |
 | Richiesto/In viaggio | ✅ | Quattro regole dominio coperte |
 | A001 due note | ✅ | Lotti separati persistiti nel record articolo |
 | Griglia e riapertura | 🟡 | Tabella Dexie e contenuto celle; lifecycle browser non collaudato |
@@ -22,10 +22,10 @@ Sono stati verificati codice, transazioni, protocollo e test automatici. Il coll
 
 | Area | Stato | Persistente locale | Sync remoto | Recuperabile da nuovo dispositivo | Problemi |
 |---|---|---:|---:|---:|---|
-| Articoli | SYNC REMOTO | Sì | Sì, versioni JSON append-only `ARTICOLI` | Sì | Adapter Google non collaudato staging |
+| Articoli | SYNC REMOTO | Sì | Sì, versioni JSON append-only `ARTICOLI` | Sì | Tutti i tab implementati; staging non collaudato |
 | Movimenti | SYNC REMOTO | Sì | Sì, append-only UUID `MOVIMENTI` | Sì | Richiede foglio e intestazioni corretti |
 | Richieste | SYNC REMOTO | Sì, nello stock e movimento | Sì | Sì | Deriva da snapshot + registro |
-| Locazioni | SYNC REMOTO | Sì | Sì, configurazione server corrente | Sì | Attualmente catalogo fisso, non editor remoto |
+| Locazioni | SYNC REMOTO | Sì | Sì, configurazione server corrente | Sì | Letto/scritto in LOCAZIONI; editor UI non presente |
 | Scomparti | SYNC REMOTO | Sì | Sì, versioni LWW `SCOMPARTI` | Sì | Collisioni risolte per updatedAt/device |
 | Soglie minime | SYNC REMOTO | Sì nell'articolo | Sì in `ARTICOLI` | Sì | Modifica concorrente LWW |
 | Configurazione | SYNC REMOTO | Sì | Sì | Sì | Configurazione generale ancora minima |
@@ -46,5 +46,5 @@ Il protocollo ora restituisce un catalogo completo (`parts`, `bins`, `locations`
 
 1. Collaudo reale Google Sheets con Service Account, fogli preparati e cold start Vercel.
 2. Test browser su Android per fotocamera, permesso negato, Service Worker, offline, chiusura/riapertura e IndexedDB.
-3. Autorizzazione server-side delle mutazioni Manager: il PIN/UI locale non basta a proteggere richieste forgiate.
+3. Autorizzazione Manager server-side implementata con token firmato; resta da collaudare su Vercel.
 4. Toolchain completa (`lint`, `typecheck`, `test`, `build`) non eseguibile nel runner finché il registry restituisce 403.

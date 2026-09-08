@@ -1,0 +1,2 @@
+import {afterEach,describe,expect,it} from 'vitest';import {issueManagerToken,verifyManagerToken} from './managerAuth';
+describe('token Manager server-side',()=>{afterEach(()=>delete process.env.MANAGER_TOKEN_SECRET);it('accetta solo token firmati dal server',()=>{process.env.MANAGER_TOKEN_SECRET='a-secure-test-secret-with-more-than-32-chars';const token=issueManagerToken();expect(verifyManagerToken(token)).toBe(true);expect(verifyManagerToken(`${token}x`)).toBe(false)})});
