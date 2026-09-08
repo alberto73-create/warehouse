@@ -45,6 +45,6 @@ Le azioni rimangono utilizzabili offline e sono indicate come “da inviare”. 
 
 ## Stato di implementazione e decisioni V1
 
-Questa revisione è un prototipo parziale e non implementa ancora tutti i requisiti della specifica originale. La [verifica puntuale](docs/VERIFICA_REQUISITI.md) distingue ciò che è completo, parziale o mancante e documenta anche l'impossibilità di accedere ai link temporanei dei mockup.
+Questa revisione è un prototipo parziale e non implementa ancora tutti i requisiti della specifica originale. L'[audit completo in 35 punti](docs/AUDIT_COMPLETO.md) verifica comportamento, problemi e priorità; la [verifica sintetica precedente](docs/VERIFICA_REQUISITI.md) resta disponibile come cronologia.
 
 La griglia demo è attualmente 3×3 e deve ancora essere resa configurabile. Lo scanner nel prototipo porta al flusso ricerca; l'integrazione fotocamera potrà usare `BarcodeDetector` con fallback a una libreria QR. Il numero operatore demo è `MR`; nessun nome reale è incluso. L'export `.xlsx` genera per ora i fogli Articoli, Giacenze e Movimenti.
