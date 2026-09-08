@@ -24,9 +24,10 @@ Aprire `http://localhost:3000`. La prima visita inizializza dati demo realistici
 
 1. Creare un progetto Google Cloud, abilitare **Google Sheets API** e creare un Service Account.
 2. Condividere il foglio con l'e-mail del Service Account come editor.
-3. Creare i tab `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`. `MOVIMENTI` deve rimanere append-only e avere `id` UUID come chiave idempotente.
-4. In Vercel configurare `DATA_ADAPTER=google`, `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `MANAGER_PIN`. Nella chiave privata codificare gli a-capo come `\n`.
-5. Sostituire l'implementazione mock di `src/app/api/sync/route.ts` con un adapter server-only che: indicizza gli UUID già acquisiti, accoda soltanto i nuovi movimenti, aggiorna snapshot e `SYNC_META`, quindi restituisce modifiche successive al cursore client. Non importare mai credenziali in componenti client.
+3. Creare i tab `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`. `MOVIMENTI` deve rimanere append-only e avere `id` UUID come chiave idempotente. La riga 1 di `MOVIMENTI` deve contenere: `id`, `createdAt`, `code`, `quantity`, `from`, `to`, `operator`, `note`, `kind`, `delta`.
+   Per `ARTICOLI` e `SCOMPARTI` usare le colonne `id`, `updatedAt`, `updatedBy`, `json`: ogni modifica aggiunge una versione e il server seleziona deterministicamente la più recente.
+4. In Vercel configurare `DATA_ADAPTER=google`, `GOOGLE_SHEET_ID`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `MANAGER_PIN`. Nella chiave privata codificare gli a-capo come `\n`.
+5. L’adapter server-only selezionato da `DATA_ADAPTER` autentica il Service Account, deduplica gli UUID, accoda i nuovi movimenti e restituisce quelli successivi al cursore client. Non importare mai credenziali nei componenti client.
 
 ## Deploy Vercel
 
@@ -47,4 +48,30 @@ Le azioni rimangono utilizzabili offline e sono indicate come “da inviare”. 
 
 Questa revisione è un prototipo parziale e non implementa ancora tutti i requisiti della specifica originale. L'[audit completo in 35 punti](docs/AUDIT_COMPLETO.md) verifica comportamento, problemi e priorità; la [verifica sintetica precedente](docs/VERIFICA_REQUISITI.md) resta disponibile come cronologia.
 
+La [prima fase di completamento core](docs/FASE_CORE.md) documenta il confronto prima/dopo per scanner QR, operatori, ruoli, richieste, arrivi, griglia, rettifiche, spedizioni, A001 e scorta minima.
+
 La griglia demo è attualmente 3×3 e deve ancora essere resa configurabile. Lo scanner nel prototipo porta al flusso ricerca; l'integrazione fotocamera potrà usare `BarcodeDetector` con fallback a una libreria QR. Il numero operatore demo è `MR`; nessun nome reale è incluso. L'export `.xlsx` genera per ora i fogli Articoli, Giacenze e Movimenti.
+
+## Risoluzione errore Vercel `404: NOT_FOUND`
+
+La route `/` è presente in `src/app/page.tsx`. Una pagina Vercel bianca con codice globale `NOT_FOUND` (anziché la pagina 404 di Next.js) indica normalmente che l'URL di deployment non esiste più, è stato sostituito oppure non è quello assegnato al deployment corrente.
+
+1. In Vercel aprire **Project → Settings → General** e impostare **Framework Preset: Next.js** e **Root Directory: `.`** (la cartella contenente `package.json`).
+2. In **Deployments**, aprire l'ultimo deployment riuscito e usare **Visit**; non riutilizzare un vecchio URL preview copiato prima di un redeploy.
+3. Verificare che la branch collegata contenga il commit più recente e avviare **Redeploy** senza usare la cache se il deployment precedente è incompleto.
+4. Controllare i log: devono essere eseguiti `npm install` e `npm run build`. Il file `vercel.json` nel repository fissa esplicitamente framework e comandi.
+5. Dopo il deploy verificare prima `/api/health`: deve rispondere con `{"status":"ok","application":"magazzino-tecnico"}`, poi aprire `/`.
+6. Se un dominio personalizzato o alias continua a dare 404, riassegnarlo al deployment corrente da **Settings → Domains**.
+
+Non impostare **Output Directory**: Next.js la gestisce automaticamente. Non configurare il progetto come “Other” o come sito statico, perché l'app contiene route API server-side.
+
+## Sincronizzazione V1 e Google Sheets
+
+Impostare `DATA_ADAPTER=google`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` e `GOOGLE_SHEET_ID` solo nell'ambiente server Vercel. L'adapter autentica il Service Account tramite JWT OAuth, legge `MOVIMENTI` e accoda soltanto UUID assenti. Il client mantiene un cursore in IndexedDB, invia i pending e applica i movimenti remoti non ancora conosciuti. Per inizializzare il foglio creare le schede `ARTICOLI`, `LOCAZIONI`, `SCOMPARTI`, `MOVIMENTI`, `RICHIESTE`, `CONFIGURAZIONE`, `SYNC_META`; `MOVIMENTI` usa le colonne `id, createdAt, code, quantity, from, to, operator, note, kind, delta` ed è append-only.
+
+La modalità `DATA_ADAPTER=mock` resta disponibile in sviluppo. Essendo memoria del processo serverless, non va usata come archivio di produzione.
+
+
+## Fase 2
+
+La [verifica della Fase 2](docs/FASE2.md) descrive implementazione e limiti; l’[audit finale in 35 punti](docs/AUDIT_FINALE_V1.md) non dichiara la V1 pronta finché build, Android/offline e Google staging non sono verificati.

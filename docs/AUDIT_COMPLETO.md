@@ -2,6 +2,8 @@
 
 Data verifica: 8 settembre 2026. Audit eseguito sul commit base `f53a076` e aggiornato dopo le correzioni sicure descritte in fondo.
 
+> **Nota successiva:** questo documento fotografa lo stato precedente alla prima fase core. Per lo stato aggiornato di QR, operatori, ruoli, richieste, arrivi, griglia, rettifiche, centrale, A001 e soglie consultare [`FASE_CORE.md`](FASE_CORE.md).
+
 ## Criterio
 
 Gli stati non indicano la semplice presenza di un nome nell'interfaccia, ma il comportamento verificabile nel codice e, quando possibile, tramite test. I link temporanei dei mockup non sono accessibili dal container; pertanto la fedeltà visuale pixel-level non è verificabile.

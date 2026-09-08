@@ -1,0 +1,2 @@
+import {describe,expect,it} from 'vitest';import {demoBins} from '@/data/demo';import {orderedBins} from './grid';
+describe('griglia',()=>{it('ordina gli scomparti per riga e colonna',()=>expect(orderedBins([...demoBins].reverse()).map(b=>b.id)).toEqual(demoBins.map(b=>b.id)));it('mantiene span e stato',()=>expect(orderedBins([{...demoBins[0],rowSpan:2,enabled:false}])[0]).toMatchObject({rowSpan:2,enabled:false}))});

@@ -1,4 +1,5 @@
-import type { Movement,Part } from '@/domain/types';
+import type { Bin,Movement,Part } from '@/domain/types';
+export const demoBins:Bin[]=Array.from({length:9},(_,index)=>({id:`buoni-${index+1}` as const,label:`Scomparto ${index+1}`,row:Math.floor(index/3)+1,column:index%3+1,rowSpan:1,columnSpan:1,enabled:true}));
 export const demoParts:Part[]=[
  {code:'93000114900',name:'Contactless iUC150B + adattatore',description:'Lettore contactless completo di adattatore e cablaggio',minimum:2,favorite:true,stock:{'buoni-3':1,'buoni-7':1,guasti:1,a001:1,viaggio:1,richiesto:2},notes:[{place:'a001',text:'Biglietteria Santa Maria Novella',quantity:1}]},
  {code:'92000412018',name:'Stampante termica TG2480',description:'Modulo stampante per emettitrice automatica',minimum:2,favorite:true,stock:{'buoni-1':1,richiesto:1}},
