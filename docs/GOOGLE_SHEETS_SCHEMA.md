@@ -2,6 +2,8 @@
 
 Tutti i tab sono letti e/o scritti dall'adapter `GoogleSheetsStore`. La riga 1 è obbligatoria e contiene le intestazioni indicate.
 
+Prima di ogni sincronizzazione l'adapter convalida tutti e sette i tab e le intestazioni, evitando scritture su uno schema incompleto o rinominato. La diagnostica Manager `GET /api/diagnostics` esegue la stessa verifica e una lettura minima senza restituire credenziali.
+
 ## ARTICOLI
 
 | Colonna | Intestazione | Contenuto |

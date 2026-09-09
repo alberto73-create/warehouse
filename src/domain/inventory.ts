@@ -15,6 +15,8 @@ export function applyMovement(part:Part,m:Movement):Part {
   if(next<0)throw new Error('La richiesta non può diventare negativa');
   return {...part,stock:{...part.stock,richiesto:next}};
  }
+ if(!m.from&&!m.to)throw new Error('Origine o destinazione obbligatoria');
+ if(m.from&&m.to&&m.from===m.to)throw new Error('Origine e destinazione devono essere diverse');
  if(m.from&&(part.stock[m.from]??0)<m.quantity)throw new Error('Quantità non disponibile nella posizione di origine');
  const stock={...part.stock}; const take=(p:Place)=>stock[p]=Math.max(0,(stock[p]??0)-m.quantity); const add=(p:Place)=>stock[p]=(stock[p]??0)+m.quantity;
  if(m.from) take(m.from); if(m.to) add(m.to);
