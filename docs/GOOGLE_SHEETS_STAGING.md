@@ -10,6 +10,7 @@
 8. Copiare nella riga 1 le intestazioni esatte descritte in [GOOGLE_SHEETS_SCHEMA.md](GOOGLE_SHEETS_SCHEMA.md). Non aggiungere colonne alle intestazioni.
 9. Copiare dalla URL l'identificativo tra `/d/` e `/edit`: è `GOOGLE_SHEET_ID`.
 10. In Vercel configurare `DATA_ADAPTER=google`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_SHEET_ID`, `MANAGER_PIN` e un `MANAGER_TOKEN_SECRET` casuale lungo. Nessuna variabile deve iniziare con `NEXT_PUBLIC_`.
+    Il nome deve essere esattamente `MANAGER_PIN`: `PIN_MANAGER` non viene letto dall'applicazione. Applicare le variabili agli ambienti desiderati e creare un nuovo deployment dopo ogni modifica. Se un PIN è comparso in screenshot, log o chat, sostituirlo prima del deploy.
 11. Eseguire un nuovo deploy. Accedere come Manager e chiamare `GET /api/diagnostics`: ambiente, autenticazione, accesso, sette tab, intestazioni e lettura devono risultare `ok`.
 12. Solo dopo una diagnostica positiva effettuare il primo sync Manager dal dispositivo A. Il bootstrap iniziale è una mutazione protetta.
 13. Verificare nel foglio versioni e movimenti, senza modificare manualmente UUID o JSON.
