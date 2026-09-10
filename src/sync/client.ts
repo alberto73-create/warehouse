@@ -1,17 +1,17 @@
 'use client';
 import {db} from '@/data/db';
 import {mergeRemote,type SyncRequest,type SyncResponse} from './protocol';
-export type SyncState='updated'|'misaligned'|'offline'|'syncing'|'error';
+export type SyncState='updated'|'misaligned'|'offline'|'syncing'|'error'|'configuration';
 function deviceId(){let id=localStorage.getItem('warehouse-device-id');if(!id){id=crypto.randomUUID();localStorage.setItem('warehouse-device-id',id)}return id}
 export async function synchronize(){
- const [parts,movements,cursorRow,managerDirty,session]=await Promise.all([db.parts.toArray(),db.movements.toArray(),db.meta.get('sync-cursor'),db.meta.get('manager-dirty'),db.sessions.get('current')]);
+ const [parts,movements,cursorRow,managerDirty]=await Promise.all([db.parts.toArray(),db.movements.toArray(),db.meta.get('sync-cursor'),db.meta.get('manager-dirty')]);
  const pending=movements.filter(movement=>movement.sync==='pending');
  const cursor=Number(cursorRow?.value??0);
  const [bins,storedLocations,storedConfiguration]=await Promise.all([db.bins.toArray(),db.locations.toArray(),db.config.get('warehouse')]);
  const {defaultConfiguration,defaultLocations}=await import('./catalog');
- const body:SyncRequest={deviceId:deviceId(),cursor,operations:pending,catalog:{parts,bins,locations:storedLocations.length?storedLocations:defaultLocations,configuration:storedConfiguration??defaultConfiguration},managerMutation:managerDirty?.value==='true',managerToken:session?.managerToken};
- const result=await fetch('/api/sync',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
- if(!result.ok)throw new Error('Sincronizzazione non riuscita');
+ const body:SyncRequest={deviceId:deviceId(),cursor,operations:pending,catalog:{parts,bins,locations:storedLocations.length?storedLocations:defaultLocations,configuration:storedConfiguration??defaultConfiguration}};
+ const result=await fetch('/api/sync',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+ if(!result.ok)throw new Error(result.status===500?'Configurazione server non pronta':result.status===403?'Accesso Manager necessario per questa modifica':'Errore sincronizzazione');
  const remote=await result.json() as SyncResponse;
  const acknowledged=new Set(remote.accepted);
  const marked=movements.map(movement=>acknowledged.has(movement.id)?{...movement,sync:'synced' as const}:movement);
